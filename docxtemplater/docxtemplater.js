@@ -1,3 +1,4 @@
+const ImageModule = require('docxtemplater-image-module-free');
 const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
 const fs = require("fs");
@@ -9,10 +10,30 @@ const convertTemplate = async ({ templateDocx, parameters, outFile }) => {
     path.resolve(__dirname, templateDocx),
     "binary"
   );
+  var opts = {}
+  opts.centered = false; //Set to true to always center images
+  opts.fileType = "docx"; //Or pptx
+
+  //Pass your image loader
+  opts.getImage = function(tagValue, tagName) {
+    //tagValue is 'examples/image.png'
+    //tagName is 'image'
+    return fs.readFileSync(tagValue);
+  }
+
+  opts.getSize = function(img, tagValue, tagName) {
+    //img is the image returned by opts.getImage()
+    //tagValue is 'examples/image.png'
+    //tagName is 'image'
+    //tip: you can use node module 'image-size' here
+    return [50, 50];
+  }
+  const imageModule = new ImageModule(opts);
   const zip = new PizZip(content);
   const doc = new Docxtemplater(zip, {
     paragraphLoop: true,
     linebreaks: true,
+    modules: [imageModule],
   });
   doc.render(parameters);
   const buf = doc.getZip().generate({
